@@ -6,18 +6,18 @@ import { ScreenshotOverlay } from './ScreenshotOverlay';
 import { createRoot } from 'react-dom/client';
 
 interface ScreenshotButtonProps {
-  targetRef: React.RefObject<HTMLElement>;
+  targetRef: HTMLElement | null;
   darkMode: boolean;
   timeLeft: TimeLeft;
   progress: number;
 }
 
-export const ScreenshotButton = ({ darkMode, timeLeft, progress }: ScreenshotButtonProps) => {
+export const ScreenshotButton = ({ targetRef, darkMode, timeLeft, progress }: ScreenshotButtonProps) => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
 
   const takeScreenshot = async () => {
-    if (isCapturing) return;
+    if (isCapturing || !targetRef) return;
 
     try {
       setIsCapturing(true);

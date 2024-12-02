@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaFlag, FaMoon, FaSun } from 'react-icons/fa';
-import { useCountdown } from './hooks/useCountdown';
-import { TimerDisplay } from './components/TimerDisplay';
+import { motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { useCountdown } from './hooks/useCountdown';
+import { FaFlag, FaMoon, FaSun } from 'react-icons/fa';
+import { TimerDisplay } from './components/TimerDisplay';
 import { SocialLinks } from './components/SocialLinks';
 import { Disclaimer } from './components/Disclaimer';
 import { Tweet } from './components/Tweet';
@@ -14,7 +14,8 @@ import { ShareButton } from './components/ShareButton';
 import { Confetti } from './components/Confetti';
 import { ProgressBar } from './components/ProgressBar';
 
-const TARGET_DATE = 'July 4, 2026 00:00:00 GMT';
+const TARGET_DATE = new Date('July 4, 2026 00:00:00 GMT');
+const START_DATE = new Date('December 1, 2024');
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -46,30 +47,13 @@ function HomeContent() {
   const timerRef = useRef<HTMLDivElement>(null);
   const timeLeft = useCountdown(TARGET_DATE);
 
-  // Calculate progress
   const calculateProgress = () => {
-    const startDate = new Date('December 1, 2024').getTime();
-    const endDate = new Date(TARGET_DATE).getTime();
-    const currentDate = new Date().getTime();
-    
-    // If before start date, return 0
-    if (currentDate < startDate) {
-      return 0;
-    }
-    
-    // If after end date, return 100
-    if (currentDate > endDate) {
-      return 100;
-    }
-    
-    const totalDuration = endDate - startDate;
-    const elapsed = currentDate - startDate;
-    const progress = (elapsed / totalDuration) * 100;
-    
-    return progress;
+    const now = new Date().getTime();
+    const total = TARGET_DATE.getTime() - START_DATE.getTime();
+    const elapsed = now - START_DATE.getTime();
+    const progress = (elapsed / total) * 100;
+    return Math.min(Math.max(progress, 0), 100);
   };
-
-  const currentProgress = calculateProgress();
 
   useEffect(() => {
     setMounted(true);
@@ -219,7 +203,7 @@ function HomeContent() {
           className="mt-8 flex flex-wrap justify-center gap-4"
         >
           <ScreenshotButton 
-            targetRef={timerRef} 
+            targetRef={timerRef.current}
             darkMode={darkMode}
             timeLeft={timeLeft}
             progress={calculateProgress()}
