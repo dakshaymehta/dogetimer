@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -13,6 +13,13 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+export const viewport: Viewport = {
+  themeColor: '#f4c20d',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
+
 export const metadata: Metadata = {
   title: 'DOGE Timer - Countdown to July 4th, 2026',
   description: 'Watch the countdown to DOGE\'s self-deletion date. A fun timer tracking the days until July 4th, 2026. Not affiliated with Dogecoin.',
@@ -21,6 +28,12 @@ export const metadata: Metadata = {
   creator: 'Dakshay Mehta',
   publisher: 'Dakshay Mehta',
   robots: 'index, follow',
+  icons: {
+    icon: '/dogetimer.png',
+    shortcut: '/dogetimer.png',
+    apple: '/dogetimer.png',
+  },
+  manifest: '/site.webmanifest',
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -30,9 +43,9 @@ export const metadata: Metadata = {
     description: 'Watch the countdown to DOGE\'s self-deletion date. A fun timer tracking the days until July 4th, 2026.',
     images: [
       {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
+        url: '/dogetimer.png',
+        width: 192,
+        height: 192,
         alt: 'DOGE Timer Preview',
       },
     ],
@@ -42,16 +55,8 @@ export const metadata: Metadata = {
     title: 'DOGE Timer - Countdown to July 4th, 2026',
     description: 'Watch the countdown to DOGE\'s self-deletion date. A fun timer tracking the days until July 4th, 2026.',
     creator: '@fibnewtonian',
-    images: ['/og-image.png'],
+    images: ['/dogetimer.png'],
   },
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
-  },
-  manifest: '/site.webmanifest',
-  themeColor: '#f4c20d',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }
 
 export default function RootLayout({
