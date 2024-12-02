@@ -45,7 +45,7 @@ function HomeContent() {
   const [showConfetti, setShowConfetti] = useState(false);
   const { darkMode, toggleDarkMode } = useTheme();
   const timerRef = useRef<HTMLDivElement>(null);
-  const timeLeft = useCountdown(TARGET_DATE);
+  const timeLeft = useCountdown(TARGET_DATE.toISOString());
 
   const calculateProgress = () => {
     const now = new Date().getTime();
