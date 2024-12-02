@@ -1,9 +1,16 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Tweet } from 'react-tweet';
 import { toPng } from 'html-to-image';
 import { FaFlag, FaCamera, FaShare, FaMoon, FaSun } from 'react-icons/fa';
+import dynamic from 'next/dynamic';
+
+const Tweet = dynamic(() => import('react-tweet').then(mod => mod.Tweet), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[300px] animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+  ),
+});
 
 type TimeLeft = {
   days: number;
@@ -28,6 +35,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const timerRef = useRef<HTMLDivElement>(null);
+  const tweetRef = useRef<HTMLDivElement>(null);
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
@@ -59,6 +67,18 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    // Load Twitter widget script
+    const script = document.createElement('script');
+    script.src = 'https://platform.twitter.com/widgets.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const takeScreenshot = async () => {
     if (timerRef.current) {
       try {
@@ -86,7 +106,14 @@ export default function Home() {
   };
 
   if (!mounted) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse space-y-8">
+          <div className="h-32 w-full bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+          <div className="h-64 w-full bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -173,7 +200,7 @@ export default function Home() {
           <div className={`${
             darkMode ? 'bg-white/5' : 'bg-white/10'
           } backdrop-blur-md rounded-2xl p-6 border border-white/20 flex justify-center`}>
-            <div className="w-full max-w-[550px]">
+            <div className="w-full max-w-[550px]" ref={tweetRef}>
               <Tweet id="1863666221301764462" />
             </div>
           </div>
