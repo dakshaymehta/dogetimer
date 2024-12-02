@@ -1,101 +1,79 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { toPng } from 'html-to-image';
-import { FaFlag, FaCamera, FaShare, FaMoon, FaSun } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaFlag, FaMoon, FaSun } from 'react-icons/fa';
+import { useCountdown } from './hooks/useCountdown';
+import { TimerDisplay } from './components/TimerDisplay';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { SocialLinks } from './components/SocialLinks';
+import { Disclaimer } from './components/Disclaimer';
+import { Tweet } from './components/Tweet';
+import { ScreenshotButton } from './components/ScreenshotButton';
+import { ShareButton } from './components/ShareButton';
+import { Confetti } from './components/Confetti';
+import { ProgressBar } from './components/ProgressBar';
 
-type TimeLeft = {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
+const TARGET_DATE = 'July 4, 2026 00:00:00 GMT';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
 };
 
-const SocialLink = ({ href, children, label }: { href: string; children: React.ReactNode; label: string }) => (
-  <a
-    href={href}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="flex items-center gap-2 text-white hover:text-yellow-200 transition-colors duration-300"
-    aria-label={label}
-  >
-    {children}
-  </a>
-);
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut"
+    }
+  }
+};
 
-export default function Home() {
+function HomeContent() {
   const [mounted, setMounted] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { darkMode, toggleDarkMode } = useTheme();
   const timerRef = useRef<HTMLDivElement>(null);
-  const tweetRef = useRef<HTMLDivElement>(null);
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
+  const timeLeft = useCountdown(TARGET_DATE);
+
+  // Calculate progress
+  const calculateProgress = () => {
+    const startDate = new Date('December 1, 2024').getTime();
+    const endDate = new Date(TARGET_DATE).getTime();
+    const currentDate = new Date().getTime();
+    
+    // If before start date, return 0
+    if (currentDate < startDate) {
+      return 0;
+    }
+    
+    // If after end date, return 100
+    if (currentDate > endDate) {
+      return 100;
+    }
+    
+    const totalDuration = endDate - startDate;
+    const elapsed = currentDate - startDate;
+    const progress = (elapsed / totalDuration) * 100;
+    
+    return progress;
+  };
+
+  const currentProgress = calculateProgress();
 
   useEffect(() => {
     setMounted(true);
-    const calculateTimeLeft = () => {
-      const targetDate = new Date('July 4, 2026 00:00:00 GMT').getTime();
-      const now = new Date().getTime();
-      const distance = targetDate - now;
-
-      return {
-        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((distance % (1000 * 60)) / 1000)
-      };
-    };
-
-    setTimeLeft(calculateTimeLeft());
-
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-
-    return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    // Load Twitter widget script
-    const script = document.createElement('script');
-    script.src = 'https://platform.twitter.com/widgets.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  const takeScreenshot = async () => {
-    if (timerRef.current) {
-      try {
-        const dataUrl = await toPng(timerRef.current, { quality: 0.95 });
-        const link = document.createElement('a');
-        link.download = `doge-timer-${new Date().toISOString()}.png`;
-        link.href = dataUrl;
-        link.click();
-      } catch (err) {
-        console.error('Error taking screenshot:', err);
-      }
-    }
-  };
-
-  const shareTimer = async () => {
-    try {
-      await navigator.share({
-        title: 'DOGE Timer',
-        text: 'Check out this countdown to DOGE\'s self-deletion!',
-        url: window.location.href
-      });
-    } catch (err) {
-      console.error('Error sharing:', err);
-    }
-  };
 
   if (!mounted) {
     return (
@@ -109,128 +87,168 @@ export default function Home() {
   }
 
   return (
-    <main className={`min-h-screen transition-colors duration-300 ${
-      darkMode 
-        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
-        : 'bg-gradient-to-br from-[#f4c20d] via-[#e6b800] to-[#ffd700]'
-    } flex flex-col items-center justify-center p-4 overflow-x-hidden`}>
-      {/* Animated background particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-full h-full animate-float opacity-30">
-          {[...Array(20)].map((_, i) => (
-            <div
+    <main 
+      className={`
+        min-h-screen transition-all duration-500
+        ${darkMode 
+          ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+          : 'bg-gradient-to-br from-[#f4c20d] via-[#e6b800] to-[#ffd700]'
+        }
+        flex flex-col items-center justify-center p-4 overflow-x-hidden
+      `}
+    >
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="particles absolute inset-0">
+          {[...Array(30)].map((_, i) => (
+            <motion.div
               key={i}
-              className={`absolute rounded-full ${darkMode ? 'bg-white/20' : 'bg-white'}`}
+              className={`particle absolute rounded-full ${darkMode ? 'bg-white/20' : 'bg-white'}`}
+              animate={{
+                x: [Math.random() * 100 + "%", Math.random() * 100 + "%"],
+                y: [Math.random() * 100 + "%", Math.random() * 100 + "%"],
+              }}
+              transition={{
+                duration: Math.random() * 10 + 10,
+                repeat: Infinity,
+                ease: "linear",
+              }}
               style={{
-                width: Math.random() * 10 + 5 + 'px',
-                height: Math.random() * 10 + 5 + 'px',
-                left: Math.random() * 100 + '%',
-                top: Math.random() * 100 + '%',
-                animation: `float ${Math.random() * 3 + 2}s linear infinite`
+                width: Math.random() * 4 + 2 + "px",
+                height: Math.random() * 4 + 2 + "px",
               }}
             />
           ))}
         </div>
       </div>
 
-      {/* Theme toggle button */}
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors duration-300"
-        aria-label="Toggle theme"
+      {showConfetti && <Confetti />}
+
+      {/* Theme Toggle */}
+      <motion.div className="fixed top-4 right-4 flex gap-4">
+        <motion.button
+          onClick={() => setShowConfetti(prev => !prev)}
+          className="p-3 rounded-full backdrop-blur-md hover:bg-white/20 transition-all duration-300"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          aria-label="Toggle confetti"
+        >
+          <span className="text-2xl">🎉</span>
+        </motion.button>
+        <motion.button
+          onClick={toggleDarkMode}
+          className="p-3 rounded-full backdrop-blur-md hover:bg-white/20 transition-all duration-300"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {darkMode ? (
+            <FaSun className="w-6 h-6 text-white animate-spin-slow" />
+          ) : (
+            <FaMoon className="w-6 h-6 text-white animate-bounce-subtle" />
+          )}
+        </motion.button>
+      </motion.div>
+
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative z-10 text-center max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8"
       >
-        {darkMode ? <FaSun className="w-6 h-6 text-white" /> : <FaMoon className="w-6 h-6 text-white" />}
-      </button>
-
-      <div className="relative z-10 text-center max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-        <div className="mb-12" ref={timerRef}>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-4 animate-bounce flex items-center justify-center gap-3">
-            DOGE Timer
-            <FaFlag className="text-3xl sm:text-4xl md:text-5xl text-white animate-pulse" />
-          </h1>
-          <p className="text-lg sm:text-xl md:text-2xl text-white/90 animate-pulse flex items-center justify-center gap-2">
+        {/* Title Section */}
+        <motion.div 
+          className="mb-12" 
+          variants={itemVariants}
+        >
+          <motion.div
+            className="relative inline-block"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300, damping: 10 }}
+          >
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-4 flex items-center justify-center gap-3">
+              <motion.span
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                DOGE Timer
+              </motion.span>
+              <motion.div
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <FaFlag className="text-3xl sm:text-4xl md:text-5xl text-white" />
+              </motion.div>
+            </h1>
+            <motion.div
+              className="absolute -inset-4 bg-white/10 rounded-lg -z-10 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              whileHover={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            />
+          </motion.div>
+          <motion.p 
+            className="text-lg sm:text-xl md:text-2xl text-white/90"
+            animate={{ opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
             Counting down to July 4th, 2026 🇺🇸
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-12">
-          {Object.entries(timeLeft).map(([unit, value]) => (
-            <div
-              key={unit}
-              className={`${
-                darkMode ? 'bg-white/5' : 'bg-white/10'
-              } backdrop-blur-md rounded-2xl p-4 sm:p-6 transform hover:scale-105 transition-all duration-300 border border-white/20 shadow-lg hover:shadow-xl`}
-            >
-              <div className="text-3xl sm:text-5xl md:text-7xl font-bold text-white mb-2 font-mono">
-                {value.toString().padStart(2, '0')}
-              </div>
-              <div className="text-white/80 text-sm sm:text-lg md:text-xl capitalize">
-                {unit}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Screenshot and Share buttons */}
-        <div className="flex justify-center gap-4 mb-8">
-          <button
-            onClick={takeScreenshot}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors duration-300 text-white"
-          >
-            <FaCamera className="w-5 h-5" /> Screenshot
-          </button>
-          <button
-            onClick={shareTimer}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-colors duration-300 text-white"
-          >
-            <FaShare className="w-5 h-5" /> Share
-          </button>
-        </div>
-
-        {/* Tweet section */}
-        <div className="mb-12 w-full max-w-xl mx-auto">
-          <div className={`${
-            darkMode ? 'bg-white/5' : 'bg-white/10'
-          } backdrop-blur-md rounded-2xl p-6 border border-white/20 flex justify-center`}>
-            <div className="w-full max-w-[550px]" ref={tweetRef}>
-              <blockquote className="twitter-tweet">
-                <p lang="en" dir="ltr">
-                  The final step of <a href="https://twitter.com/DOGE?ref_src=twsrc%5Etfw">@DOGE</a> is to delete itself{' '}
-                  <a href="https://t.co/ZCj2NvHm1U">https://t.co/ZCj2NvHm1U</a>
-                </p>
-                &mdash; Elon Musk (@elonmusk){' '}
-                <a href="https://twitter.com/elonmusk/status/1863666221301764462?ref_src=twsrc%5Etfw">
-                  December 2, 2024
-                </a>
-              </blockquote>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          <div className="flex justify-center space-x-6">
-            <SocialLink href="https://twitter.com/fibnewtonian" label="Twitter">
-              <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24">
-                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-              </svg>
-            </SocialLink>
-            <SocialLink href="https://github.com/dakshaymehta" label="GitHub">
-              <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24">
-                <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
-              </svg>
-            </SocialLink>
+        {/* Timer Section with Progress Bar */}
+        <motion.div 
+          ref={timerRef}
+          className={`screenshot-section space-y-8 p-8 rounded-xl ${darkMode ? 'bg-gray-900' : 'bg-[#f4c20d]'}`}
+          variants={itemVariants}
+        >
+          {/* Progress Bar */}
+          <div className="screenshot-content">
+            <ProgressBar progress={calculateProgress()} darkMode={darkMode} />
           </div>
 
-          <div className={`${
-            darkMode ? 'bg-black/30' : 'bg-black/10'
-          } backdrop-blur-md rounded-xl p-6 max-w-2xl mx-auto`}>
-            <p className="text-white/80 text-sm md:text-base">
-              Disclaimer: This website is not affiliated with Dogecoin or any cryptocurrency.
-              This is just a fun countdown timer. Much wow! 🐕
-            </p>
+          {/* Timer Display */}
+          <div className="screenshot-content">
+            <TimerDisplay timeLeft={timeLeft} darkMode={darkMode} />
           </div>
-        </div>
-      </div>
+        </motion.div>
+
+        {/* Controls Section */}
+        <motion.div 
+          variants={itemVariants}
+          className="mt-8 flex flex-wrap justify-center gap-4"
+        >
+          <ScreenshotButton 
+            targetRef={timerRef} 
+            darkMode={darkMode}
+            timeLeft={timeLeft}
+            progress={calculateProgress()}
+          />
+          <ShareButton darkMode={darkMode} />
+        </motion.div>
+
+        {/* Tweet Section */}
+        <motion.div variants={itemVariants}>
+          <Tweet darkMode={darkMode} />
+        </motion.div>
+
+        {/* Social Links and Disclaimer */}
+        <motion.div 
+          className="space-y-8"
+          variants={itemVariants}
+        >
+          <SocialLinks />
+          <Disclaimer darkMode={darkMode} />
+        </motion.div>
+      </motion.div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <ThemeProvider>
+      <HomeContent />
+    </ThemeProvider>
   );
 }
